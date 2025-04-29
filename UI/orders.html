@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenGrocer - Orders</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="index.css">
+    
+    <style>
+        :root {
+            --primary: rgb(13 110 253);
+            --primary-dark: #38973d;
+            --accent: #ff9800;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --border-color: #dee2e6;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --header-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --table-stripe: rgba(0, 0, 0, 0.03);
+        }
+
+        [data-bs-theme="dark"] {
+            --primary: #66bb6a;
+            --primary-dark: #43a047;
+            --accent: #ffb74d;
+            --success: #4caf50;
+            --danger: #f44336;
+            --warning: #ffb300;
+            --text-primary: #e0e0e0;
+            --text-secondary: #adb5bd;
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --border-color: #333333;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --header-bg: #1a1a1a;
+            --card-bg: #242424;
+            --table-stripe: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-align: center;
+            display: inline-block;
+            min-width: 100px;
+        }
+
+        .status-delivered {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .status-processing {
+            background-color: var(--warning);
+            color: #212529;
+        }
+
+        .status-pending {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .status-cancelled {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 0;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--border-color);
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(65, 162, 68, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 0;
+        }
+        
+        /* Sidebar and Content Layout */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 56px;
+            bottom: 0;
+            width: 250px;
+            background-color: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar-collapsed {
+            left: -250px;
+        }
+
+        .content-wrapper {
+            margin-left: 250px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .content-expanded {
+            margin-left: 0;
+        }
+
+        .btn-toggle-sidebar {
+            cursor: pointer;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="btn-toggle-sidebar text-light" id="toggleSidebar">
+                <i class="fas fa-bars"></i>
+            </a>
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-leaf logo-icon"></i> GreenGrocer
+            </a>
+            <div class="ms-auto d-flex align-items-center">
+                <div class="form-check form-switch me-3">
+                    <input class="form-check-input" type="checkbox" id="themeToggle">
+                    <label class="form-check-label text-light" for="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </label>
+                </div>
+                <div class="btn-group">
+                    <a href="./index.html" class="btn btn-outline-light">
+                        <i class="fas fa-box-open me-1"></i> Inventory
+                    </a>
+                    <a href="./processale.html" class="btn btn-success">
+                        <i class="fas fa-cash-register me-1"></i> Process Sale
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar bg-body" id="sidebar">
+        <div class="d-flex align-items-center mb-4">
+            <i class="fas fa-user-circle fs-1 text-primary me-3"></i>
+            <div>
+                <h6 class="mb-0">Store Manager</h6>
+                <small class="text-muted">Admin</small>
+            </div>
+        </div>
+        
+        <nav class="nav flex-column">
+            <a class="nav-link" href="index.html">
+                <i class="fas fa-box-open"></i> Inventory
+            </a>
+            <a class="nav-link active" href="orders.html">
+                <i class="fas fa-clipboard-list"></i> Orders
+            </a>
+            <a class="nav-link" href="processale.html">
+                <i class="fas fa-cash-register"></i> Process Sale
+            </a>
+           
+            <a class="nav-link" href="./customer.html">
+                <i class="fas fa-users"></i> Customers
+            </a>
+        </nav>
+        
+        <div class="mt-auto pt-5">
+            <div class="alert alert-primary">
+                <i class="fas fa-lightbulb me-2"></i> Tip: Use keyboard shortcut <kbd>Ctrl</kbd>+<kbd>B</kbd> to toggle sidebar
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-wrapper" id="content">
+        <div class="container-fluid p-0">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Order Management</h2>
+                <ol class="breadcrumb mb-0"></ol>
+            </div>
+            
+            <!-- Orders Card -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Orders List</h5>
+                    <div class="d-flex">
+                        <button id="refreshBtn" class="btn btn-sm btn-primary me-2">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-filter me-1"></i> Filter
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" id="filterDropdown" aria-labelledby="filterDropdownBtn">
+                                <li><a class="dropdown-item" href="#" data-filter="all">All Orders</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="pending">Pending</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="processing">Processing</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="delivered">Delivered</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="cancelled">Cancelled</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-2"></i>Order ID</th>
+                                    <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                                    <th><i class="fas fa-calendar-alt me-2"></i>Order Date</th>
+                                    <th><i class="fas fa-rupee-sign me-2"></i>Total Amount</th>
+                                    <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                                    <th class="text-center"><i class="fas fa-cogs me-2"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderTable">
+                                <!-- Orders will be loaded here -->
+                            </tbody>
+                        </table>
+                        <div id="loadingIndicator" class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                        <div id="emptyState" class="empty-state" style="display: none;">
+                            <i class="fas fa-shopping-cart"></i>
+                            <p>No orders found</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <nav aria-label="Orders navigation">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1">Previous</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span id="successMessage">Operation completed successfully!</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            
+            // Check for saved theme preference or use default
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+            
+            // Set the toggle to match the current theme
+            themeToggle.checked = savedTheme === 'dark';
+            
+            // Update icon based on theme
+            updateThemeIcon();
+            
+            // Theme toggle event listener
+            themeToggle.addEventListener('change', function() {
+                const theme = this.checked ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-bs-theme', theme);
+                localStorage.setItem('theme', theme);
+                updateThemeIcon();
+            });
+            
+            function updateThemeIcon() {
+                const icon = themeToggle.nextElementSibling.querySelector('i');
+                if (themeToggle.checked) {
+                    icon.className = 'fas fa-sun';
+                } else {
+                    icon.className = 'fas fa-moon';
+                }
+            }
+            
+            // Sidebar toggle functionality
+            const toggleSidebar = document.getElementById('toggleSidebar');
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            
+            // Check for saved sidebar state
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (sidebarCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                content.classList.add('content-expanded');
+            }
+            
+            toggleSidebar.addEventListener('click', function() {
+                sidebar.classList.toggle('sidebar-collapsed');
+                content.classList.toggle('content-expanded');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('sidebar-collapsed'));
+            });
+            
+            // Keyboard shortcut for sidebar toggle (Ctrl+B)
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'b') {
+                    e.preventDefault();
+                    toggleSidebar.click();
+                }
+            });
+            
+            // Load orders data
+            loadOrders();
+            
+            // Refresh button
+            $('#refreshBtn').on('click', function() {
+                loadOrders();
+            });
+            
+            // Filter functionality
+            $('#filterDropdown a').on('click', function(e) {
+                e.preventDefault();
+                const filter = $(this).data('filter');
+                filterOrders(filter);
+            });
+            
+            // Function to download order data
+            $(document).on('click', '.download-btn', function() {
+                const orderRow = $(this).closest('tr');
+                const orderId = orderRow.find('td:first-child').text();
+                const customerId = orderRow.find('td:nth-child(2)').text();
+                const orderDate = orderRow.find('td:nth-child(3)').text();
+                const totalAmount = orderRow.find('td:nth-child(4)').text().replace('₹', '');
+                const status = orderRow.find('td:nth-child(5) .status').text();
+                
+                // Create the content of the file
+                const content = `Order Details\n--------------\nOrder ID: ${orderId}\nCustomer ID: ${customerId}\nOrder Date: ${orderDate}\nTotal Amount: ₹${totalAmount}\nStatus: ${status}\n`;
+                
+                // Create a Blob with the content
+                const blob = new Blob([content], { type: 'text/plain' });
+                
+                // Create a temporary URL for the Blob
+                const url = window.URL.createObjectURL(blob);
+                
+                // Create a temporary link element
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Order_${orderId}.txt`;
+                
+                // Append the link to the body, click it, and remove it
+                document.body.appendChild(a);
+                a.click();
+                
+                // Clean up
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Show success toast
+                showToast("Order details downloaded successfully!");
+            });
+            
+            function loadOrders() {
+                $('#loadingIndicator').show();
+                $('#emptyState').hide();
+                
+                $.ajax({
+                    url: "http://127.0.0.1:5000/orders",
+                    type: "GET",
+                    success: function(data) {
+                        let tableBody = $("#orderTable");
+                        tableBody.empty();
+                        
+                        if (data.length === 0) {
+                            $('#emptyState').show();
+                        } else {
+                            data.forEach(order => {
+                                // Status classes mapping
+                                const statusClass = getStatusClass(order[4].toLowerCase());
+                                
+                                let row = `<tr>
+                                    <td>${order[0]}</td>
+                                    <td>${order[1]}</td>
+                                    <td>${order[2]}</td>
+                                    <td>₹${parseFloat(order[3]).toFixed(2)}</td>
+                                    <td><span class="status ${statusClass}">${order[4]}</span></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary download-btn" data-order-id="${order[0]}">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>`;
+                                tableBody.append(row);
+                            });
+                        }
+                        
+                        $('#loadingIndicator').hide();
+                    },
+                    error: function() {
+                        $('#loadingIndicator').hide();
+                        $('#emptyState').show();
+                        $('#emptyState i').removeClass('fa-shopping-cart').addClass('fa-exclamation-triangle');
+                        $('#emptyState p').text('Failed to load orders. Please try again.');
+                    }
+                });
+            }
+            
+            function getStatusClass(status) {
+                switch(status.toLowerCase()) {
+                    case 'delivered':
+                        return 'status-delivered';
+                    case 'processing':
+                        return 'status-processing';
+                    case 'pending':
+                        return 'status-pending';
+                    case 'cancelled':
+                        return 'status-cancelled';
+                    default:
+                        return 'status-pending';
+                }
+            }
+            
+            function filterOrders(filter) {
+                if (filter === 'all') {
+                    $('#orderTable tr').show();
+                } else {
+                    $('#orderTable tr').hide();
+                    $(`#orderTable tr td .status-${filter}`).closest('tr').show();
+                }
+                
+                // Show empty state if no visible rows
+                if ($('#orderTable tr:visible').length === 0) {
+                    $('#emptyState').show();
+                    $('#emptyState i').removeClass('fa-exclamation-triangle').addClass('fa-filter');
+                    $('#emptyState p').text('No orders match your filter');
+                } else {
+                    $('#emptyState').hide();
+                }
+            }
+            
+            // Show toast notifications
+            function showToast(message, type = "success") {
+                const toast = document.getElementById('successToast');
+                const messageElement = document.getElementById('successMessage');
+                
+                // Set message
+                messageElement.textContent = message;
+                
+                // Set toast type
+                toast.className = toast.className.replace(/bg-\w+/, '');
+                toast.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
+                
+                // Show toast
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            }
+        });
+    </script>
+</body>
+</html>
